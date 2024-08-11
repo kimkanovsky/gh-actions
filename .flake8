@@ -1,0 +1,20 @@
+[flake8]
+max-line-length = 88
+max-complexity = 10
+
+select = C,E,F,W,B,D
+ignore = 
+    D100,
+    D200,
+    D401,
+    WPS421,
+    Q000,
+    WPS111,
+    WPS114,
+    WPS305,
+    WPS432,
+    WPS601,
+    WPS602,
+
+per-file-ignores = 
+    __init__.py: F401
