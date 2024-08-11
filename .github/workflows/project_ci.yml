@@ -54,8 +54,8 @@ jobs:
       - name: Set job output
         if: failure()
         run: |
-          echo "step_status=failed" >> $GITHUB_OUTPUT
-          echo "${{ toJSON(github) }} step_status=failed" >> $GITHUB_OUTPUT
+          echo "step_status=failed ${{ matrix.python-version }}" >> $GITHUB_OUTPUT
+          echo "${{ toJSON(github) }} step_status=failed"
 
   #   notify:
   #     runs-on: ubuntu-latest
