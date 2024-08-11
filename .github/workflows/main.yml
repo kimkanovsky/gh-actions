@@ -22,4 +22,4 @@ jobs:
       - name: Install black
         run: pip install black
       - name: Test with black
-        run: black .
+        run: black . --check
