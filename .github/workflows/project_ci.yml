@@ -76,18 +76,18 @@ jobs:
     steps:
       - name: Determine status of all jobs
         run: |
-          message=""
-          if [ "${{ needs.lint-and-type-check.outputs.result }}" == "success" ]; then
-            message="CI passed on all jobs!"
-          else
-            failed_jobs=""
+          message="CI passed on all jobs!"
+          failed_jobs=""
+
+          if [ "${{ needs['lint-and-type-check'].result }}" != "success" ]; then
             for version in 3.11 3.10; do
-              if [ "${{ needs.lint-and-type-check.outputs.result[$version] }}" != "success" ]; then
+              if [ "${{ needs['lint-and-type-check'].outputs.result[$version] }}" != "success" ]; then
                 failed_jobs="$failed_jobs Python $version,"
               fi
             done
             message="CI failed on jobs: ${failed_jobs%,}"
           fi
+
           echo "message=$message" >> $GITHUB_ENV
 
       - name: Send notification to Telegram
