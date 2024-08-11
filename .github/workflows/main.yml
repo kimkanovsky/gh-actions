@@ -1,5 +1,5 @@
 name: Demo Workflow
-on: workflow_dispatch
+on: push
 jobs:
   print:
     runs-on: ubuntu-latest
@@ -10,6 +10,13 @@ jobs:
         run: |
           echo First line
           echo Second line
+      - name: Get repo code
+        uses: actions/checkout@v4
+      - name: Test application
+        run: python hello.py
+  black:
+    runs-on: ubuntu-latest
+    steps: 
       - name: Get repo code
         uses: actions/checkout@v4
       - name: Test application
