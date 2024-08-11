@@ -19,5 +19,7 @@ jobs:
     steps: 
       - name: Get repo code
         uses: actions/checkout@v4
-      - name: Test application
+      - name: Install black
+        run: pip install black
+      - name: Test with black
         run: black .
