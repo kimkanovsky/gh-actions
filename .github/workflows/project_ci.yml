@@ -51,19 +51,48 @@ jobs:
         run: |
           flake8 . || exit 1
 
+  #   notify:
+  #     runs-on: ubuntu-latest
+  #     needs: lint-and-type-check
+  #     if: always()
+
+  #     steps:
+  #       - name: Send Telegram Notification
+  #         uses: appleboy/telegram-action@v0.1.0
+  #         with:
+  #           to: ${{ secrets.TELEGRAM_CHAT_ID }}
+  #           token: ${{ secrets.TELEGRAM_TOKEN }}
+  #           message: |
+  #             ${{ github.event.repository.name }}: Pipeline for ${{ github.sha }} finished ${{ job.status == 'success' && 'successfully' || 'with error' }}!
+  #             {% if failure() %}
+  #             ${{ steps.failed_step.outcome.name }} failed
+  #             {% endif %}
+
   notify:
     runs-on: ubuntu-latest
     needs: lint-and-type-check
     if: always()
 
     steps:
-      - name: Send Telegram Notification
-        uses: appleboy/telegram-action@v0.1.0
+      - name: Determine status of all jobs
+        run: |
+          message=""
+          if [ "${{ needs.lint-and-type-check.outputs.result }}" == "success" ]; then
+            message="CI passed on all jobs!"
+          else
+            failed_jobs=""
+            for version in 3.11 3.10; do
+              if [ "${{ needs.lint-and-type-check.outputs.result[$version] }}" != "success" ]; then
+                failed_jobs="$failed_jobs Python $version,"
+              fi
+            done
+            message="CI failed on jobs: ${failed_jobs%,}"
+          fi
+          echo "message=$message" >> $GITHUB_ENV
+
+      - name: Send notification to Telegram
+        uses: appleboy/telegram-action@master
         with:
-          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          to: "${{ secrets.TELEGRAM_TO }}"
           token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: |
-            ${{ github.event.repository.name }}: Pipeline for ${{ github.sha }} finished ${{ job.status == 'success' && 'successfully' || 'with error' }}!
-            {% if failure() %}
-            ${{ steps.failed_step.outcome.name }} failed
-            {% endif %}
+          message: ${{ env.message }}
