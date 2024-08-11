@@ -34,7 +34,7 @@ jobs:
     - name: Run lint and generate HTML report
       run: |
         mkdir -p reports
-        flake8 . --format=html --htmldir=reports/lint_report
+        flake8 . --format=html --htmldir=reports/lint_report || true
 
     - name: Run type check
       run: python -m mypy .
@@ -45,3 +45,8 @@ jobs:
       with:
         name: lint-report
         path: reports/lint_report
+
+    - name: Fail the job if lint errors were found
+      if: ${{ matrix.python-version == '3.10' }}
+      run: |
+        flake8 . || exit 1
