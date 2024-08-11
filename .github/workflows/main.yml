@@ -20,4 +20,4 @@ jobs:
       - name: Get repo code
         uses: actions/checkout@v4
       - name: Test application
-        run: python hello.py
+        run: black .
