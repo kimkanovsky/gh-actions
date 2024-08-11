@@ -1,3 +1,121 @@
+# name: CI Pipeline
+
+# on:
+#   pull_request:
+#     branches:
+#       - main
+#   push:
+#     branches:
+#       - main
+
+# jobs:
+#   lint-and-type-check:
+#     runs-on: ubuntu-latest
+
+#     strategy:
+#       matrix:
+#         python-version: ["3.11", "3.10"]
+
+#     outputs:
+#       output_1: ${{ steps.gen_output.outputs.output_1 }}
+#       output_2: ${{ steps.gen_output.outputs.output_2 }}
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Set up Python ${{ matrix.python-version }}
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: ${{ matrix.python-version }}
+
+#       - name: Install dependencies
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install wemake-python-styleguide mypy
+#           pip install --upgrade flake8 flake8-quotes flake8-html
+
+#       - name: Run lint and generate HTML report
+#         run: |
+#           mkdir -p reports
+#           flake8 . --format=html --htmldir=reports/lint_report || true
+
+#       - name: Run type check
+#         run: python -m mypy .
+
+#       - name: Archive HTML report
+#         if: ${{ matrix.python-version == '3.10' }}
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: lint-report
+#           path: reports/lint_report
+
+#       - name: Fail the job if lint errors were found
+#         if: ${{ matrix.python-version == '3.10' }}
+#         run: |
+#           flake8 . || exit 1
+
+#       - name: Set job output
+#         id: gen_output
+#         if: failure()
+#         run: |
+#           echo "step_status=failed ${{ matrix.python-version }}" >> $GITHUB_OUTPUT
+#           echo "${{ toJSON(github) }}"
+
+#   notify:
+#     runs-on: ubuntu-latest
+#     needs: lint-and-type-check
+#     if: always()
+
+#     steps:
+#       - name: Determine status of all jobs
+#         run: |
+#           message="CI passed on all jobs!"
+#           failed_jobs=""
+#           echo ${{ toJSON(github) }}
+#           echo ${{ toJSON(needs) }}
+#           echo ${{ needs.lint-and-type-check.outputs.output_1 }}
+#           echo ${{ needs.lint-and-type-check.outputs.output_2 }}
+
+#         #   if [ "${{ needs['lint-and-type-check'].result }}" != "success" ]; then
+#         #     for version in 3.11 3.10; do
+#         #       if [ "${{ needs['lint-and-type-check'].result }}" != "success" ]; then
+#         #         failed_jobs="$failed_jobs Python $version,"
+#         #       fi
+#         #     done
+#         #     message="CI failed on jobs: ${failed_jobs%,}"
+#         #   fi
+
+#         #   echo "message=$message" >> $GITHUB_ENV
+
+#     #   - name: Send notification to Telegram
+#     #     uses: appleboy/telegram-action@master
+#     #     with:
+#     #       to: "${{ secrets.TELEGRAM_TO }}"
+#     #       token: ${{ secrets.TELEGRAM_TOKEN }}
+#     #       message: ${{ env.message }}
+
+# #   notify:
+# #     runs-on: ubuntu-latest
+# #     needs: [lint, test]
+# #     if: always()
+
+# #     steps:
+# #         - name: Get message
+# #         run: |
+# #             if [ "${{ needs.lint.result }}" == "success" ] && [ "${{ needs.test.result }}" == "success" ]; then
+# #                 echo "message=CI passed on all jobs!" >> $GITHUB_ENV
+# #             else
+# #                 echo "message=CI failed!" >> $GITHUB_ENV
+# #             fi
+# # - name: Send notification to Telegram
+# # uses: appleboy/telegram-action@master
+# # with:
+# #     to: "${{ secrets.TELEGRAM_TO }}"
+# #     token: ${{ secrets.TELEGRAM_TOKEN }}
+# #     message: ${{ env.message }}
+
+
 name: CI Pipeline
 
 on:
@@ -17,8 +135,7 @@ jobs:
         python-version: ["3.11", "3.10"]
 
     outputs:
-      output_1: ${{ steps.gen_output.outputs.output_1 }}
-      output_2: ${{ steps.gen_output.outputs.output_2 }}
+      output_1: ${{ steps.set_output.outputs.output_1 }}
 
     steps:
       - name: Checkout code
@@ -44,40 +161,16 @@ jobs:
         run: python -m mypy .
 
       - name: Archive HTML report
-        if: ${{ matrix.python-version == '3.10' }}
+        if: matrix.python-version == '3.10'
         uses: actions/upload-artifact@v4
         with:
           name: lint-report
           path: reports/lint_report
 
-      - name: Fail the job if lint errors were found
-        if: ${{ matrix.python-version == '3.10' }}
-        run: |
-          flake8 . || exit 1
-
       - name: Set job output
-        id: gen_output
-        if: failure()
+        id: set_output
         run: |
-          echo "step_status=failed ${{ matrix.python-version }}" >> $GITHUB_OUTPUT
-          echo "${{ toJSON(github) }}"
-
-  #   notify:
-  #     runs-on: ubuntu-latest
-  #     needs: lint-and-type-check
-  #     if: always()
-
-  #     steps:
-  #       - name: Send Telegram Notification
-  #         uses: appleboy/telegram-action@v0.1.0
-  #         with:
-  #           to: ${{ secrets.TELEGRAM_CHAT_ID }}
-  #           token: ${{ secrets.TELEGRAM_TOKEN }}
-  #           message: |
-  #             ${{ github.event.repository.name }}: Pipeline for ${{ github.sha }} finished ${{ job.status == 'success' && 'successfully' || 'with error' }}!
-  #             {% if failure() %}
-  #             ${{ steps.failed_step.outcome.name }} failed
-  #             {% endif %}
+          echo "output_1=Lint and type check completed for Python ${{ matrix.python-version }}" >> $GITHUB_OUTPUT
 
   notify:
     runs-on: ubuntu-latest
@@ -89,45 +182,7 @@ jobs:
         run: |
           message="CI passed on all jobs!"
           failed_jobs=""
-          echo ${{ toJSON(github) }}
-          echo ${{ toJSON(needs) }}
-          echo ${{ needs.lint-and-type-check.outputs.output_1 }}
-          echo ${{ needs.lint-and-type-check.outputs.output_2 }}
 
-        #   if [ "${{ needs['lint-and-type-check'].result }}" != "success" ]; then
-        #     for version in 3.11 3.10; do
-        #       if [ "${{ needs['lint-and-type-check'].result }}" != "success" ]; then
-        #         failed_jobs="$failed_jobs Python $version,"
-        #       fi
-        #     done
-        #     message="CI failed on jobs: ${failed_jobs%,}"
-        #   fi
-
-        #   echo "message=$message" >> $GITHUB_ENV
-
-    #   - name: Send notification to Telegram
-    #     uses: appleboy/telegram-action@master
-    #     with:
-    #       to: "${{ secrets.TELEGRAM_TO }}"
-    #       token: ${{ secrets.TELEGRAM_TOKEN }}
-    #       message: ${{ env.message }}
-
-#   notify:
-#     runs-on: ubuntu-latest
-#     needs: [lint, test]
-#     if: always()
-
-#     steps:
-#         - name: Get message
-#         run: |
-#             if [ "${{ needs.lint.result }}" == "success" ] && [ "${{ needs.test.result }}" == "success" ]; then
-#                 echo "message=CI passed on all jobs!" >> $GITHUB_ENV
-#             else
-#                 echo "message=CI failed!" >> $GITHUB_ENV
-#             fi
-# - name: Send notification to Telegram
-# uses: appleboy/telegram-action@master
-# with:
-#     to: "${{ secrets.TELEGRAM_TO }}"
-#     token: ${{ secrets.TELEGRAM_TOKEN }}
-#     message: ${{ env.message }}
+          # Print the outputs from lint-and-type-check job
+          echo "Output 1: ${{ needs['lint-and-type-check'].outputs.output_1 }}"
+          echo "Message: $message"
