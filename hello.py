@@ -1,6 +1,6 @@
-a = 1
-b = 2
-c = a / b
-d = {'hello': 'world'} | {'foo': 'bar'}
+asd = 1
+bsd = 2
+csd = asd / bsd
+dsd = {'hello': 'world'} | {'foo': 'bar'}
 
-print(c)
+print(csd)
