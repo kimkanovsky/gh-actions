@@ -91,7 +91,8 @@ jobs:
           failed_jobs=""
           echo ${{ toJSON(github) }}
           echo ${{ toJSON(needs) }}
-          echo ${{ needs.lint-and-type-check.outputs.step_status }}
+          echo ${{ needs.lint-and-type-check.outputs.output_1 }}
+          echo ${{ needs.lint-and-type-check.outputs.output_2 }}
 
         #   if [ "${{ needs['lint-and-type-check'].result }}" != "success" ]; then
         #     for version in 3.11 3.10; do
