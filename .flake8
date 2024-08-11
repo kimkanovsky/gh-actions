@@ -11,7 +11,7 @@ ignore =
     Q000,
     WPS111,
     WPS114,
-    WPS305,
+    ; WPS305,
     WPS432,
     WPS601,
     WPS602,
