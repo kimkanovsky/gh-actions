@@ -6,6 +6,9 @@ on:
 jobs:
   print:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
     steps: 
       - name: Print to console
         run: echo Hello GH Actions!
@@ -13,6 +16,10 @@ jobs:
         run: |
           echo First line
           echo Second line
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: Get repo code
         uses: actions/checkout@v4
       - name: Test application
