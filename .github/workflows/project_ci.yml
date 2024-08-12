@@ -261,7 +261,7 @@ jobs:
     steps:
       - name: Determine status of all jobs
         run: |
-          combined_output="${{ needs['lint-and-type-check'].outputs.combined_output }}"
+          combined_output="${{ needs.lint-and-type-check.outputs.combined_output }}"
           echo "Combined output from all matrix jobs:"
           echo "$combined_output"
 
