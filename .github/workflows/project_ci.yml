@@ -244,6 +244,9 @@ jobs:
         run: |
           echo "output_part=Python ${{ matrix.python-version }}: completed" >> $GITHUB_ENV
 
+      - name: Print steps
+        run: echo ${{ toJSON(steps) }}
+
       - name: Combine outputs
         id: combine_outputs
         run: |
