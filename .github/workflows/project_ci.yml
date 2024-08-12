@@ -405,6 +405,8 @@ jobs:
           STATUS="successfully"
           FAILED_STEP="${{ needs.lint-and-type-check.outputs.failed_step }}"
 
+          echo ${{ toJSON(needs) }}
+
           if [ "$FAILED_STEP" != "All steps passed" ]; then
             STATUS="with error"
             MESSAGE="${PROJECT_NAME}: Pipeline for commit ${COMMIT_HASH} finished ${STATUS}! ${FAILED_STEP} failed."
@@ -412,6 +414,8 @@ jobs:
             MESSAGE="${PROJECT_NAME}: Pipeline for commit ${COMMIT_HASH} finished ${STATUS}!"
           fi
 
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-          -d chat_id="${TELEGRAM_CHAT_ID}" \
-          -d text="${MESSAGE}"
+          echo ${MESSAGE}
+
+        #   curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+        #   -d chat_id="${TELEGRAM_CHAT_ID}" \
+        #   -d text="${MESSAGE}"
