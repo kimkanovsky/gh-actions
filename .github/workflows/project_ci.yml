@@ -347,9 +347,6 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11"]
 
-    outputs:
-      failed_step: ${{ steps.capture-failure.outputs.failed_step }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -384,18 +381,22 @@ jobs:
 
       - name: Capture Failed Step
         id: capture-failure
+        if: failure()
         run: |
-          if [ "${{ steps.run-lint-and-generate-html-report.outcome }}" == "failure" ]; then
-            echo "failed_step=Run lint and generate HTML report" >> $GITHUB_OUTPUT
-          elif [ "${{ steps.run-type-check.outcome }}" == "failure" ]; then
-            echo "failed_step=Run type check" >> $GITHUB_OUTPUT
-          else
-            echo "failed_step=All steps passed" >> $GITHUB_OUTPUT
+          PROJECT_NAME="${{ github.repository }}"
+          COMMIT_HASH="${{ github.sha }}"
+          STATUS="with error"
+
+          echo ${{ toJSON(steps) }}
+
+          MESSAGE="${PROJECT_NAME}: Pipeline for commit ${COMMIT_HASH} finished ${STATUS}! ${{ toJSON(steps) }} failed."
+
+          echo ${MESSAGE}
+
 
   notify:
     runs-on: ubuntu-latest
     needs: lint-and-type-check
-    if: always()
 
     steps:
       - name: Send Telegram notification
@@ -403,16 +404,8 @@ jobs:
           PROJECT_NAME="${{ github.repository }}"
           COMMIT_HASH="${{ github.sha }}"
           STATUS="successfully"
-          FAILED_STEP="${{ needs['lint-and-type-check'].outputs.failed_step }}"
 
-          echo ${{ toJSON(needs) }}
-
-          if [ "$FAILED_STEP" != "All steps passed" ]; then
-            STATUS="with error"
-            MESSAGE="${PROJECT_NAME}: Pipeline for commit ${COMMIT_HASH} finished ${STATUS}! ${FAILED_STEP} failed."
-          else
-            MESSAGE="${PROJECT_NAME}: Pipeline for commit ${COMMIT_HASH} finished ${STATUS}!"
-          fi
+          MESSAGE="${PROJECT_NAME}: Pipeline for commit ${COMMIT_HASH} finished ${STATUS}!"
 
           echo ${MESSAGE}
 
