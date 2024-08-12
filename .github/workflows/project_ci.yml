@@ -368,10 +368,6 @@ jobs:
           mkdir -p reports
           flake8 . --format=html --htmldir=reports/lint_report || true
 
-      - name: Run type check
-        id: run-type-check
-        run: python -m mypy .
-
       - name: Archive HTML report
         if: matrix.python-version == '3.10'
         uses: actions/upload-artifact@v4
@@ -380,9 +376,12 @@ jobs:
           path: reports/lint_report
 
       - name: Fail the job if lint errors were found
-        if: matrix.python-version == '3.10'
         id: run-lint-to-check
-        run: flake8 . 
+        run: flake8 .
+
+      - name: Run type check
+        id: run-type-check
+        run: python -m mypy .
 
       - name: Capture Failed Step
         id: capture-failure
@@ -392,14 +391,13 @@ jobs:
           COMMIT_HASH="${{ github.sha }}"
           STATUS="with error"
 
-          # Convert the steps object to JSON and parse it to find the failed step
           FAILED_STEP=$(echo '${{ toJSON(steps) }}' | jq -r 'to_entries[] | select(.value.outcome == "failure") | .key')
 
           if [ -z "$FAILED_STEP" ]; then
             FAILED_STEP="Unknown step"
           fi
 
-          MESSAGE="${PROJECT_NAME}: Pipeline for commit ${COMMIT_HASH} finished ${STATUS}! Step ${FAILED_STEP} failed."
+          MESSAGE="${PROJECT_NAME}: Pipeline for commit ${COMMIT_HASH} finished ${STATUS} with Python ${{ matrix.python-version }}! Step ${FAILED_STEP} failed."
 
           echo "$MESSAGE"
 
