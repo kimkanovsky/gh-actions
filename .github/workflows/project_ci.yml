@@ -386,11 +386,11 @@ jobs:
         id: capture-failure
         run: |
           if [ "${{ steps.run-lint-and-generate-html-report.outcome }}" == "failure" ]; then
-            echo "failed_step=Run lint and generate HTML report" >> $GITHUB_ENV
+            echo "failed_step=Run lint and generate HTML report" >> $GITHUB_OUTPUT
           elif [ "${{ steps.run-type-check.outcome }}" == "failure" ]; then
-            echo "failed_step=Run type check" >> $GITHUB_ENV
+            echo "failed_step=Run type check" >> $GITHUB_OUTPUT
           else
-            echo "failed_step=All steps passed" >> $GITHUB_ENV
+            echo "failed_step=All steps passed" >> $GITHUB_OUTPUT
 
   notify:
     runs-on: ubuntu-latest
@@ -403,7 +403,7 @@ jobs:
           PROJECT_NAME="${{ github.repository }}"
           COMMIT_HASH="${{ github.sha }}"
           STATUS="successfully"
-          FAILED_STEP="${{ needs.lint-and-type-check.outputs.failed_step }}"
+          FAILED_STEP="${{ needs['lint-and-type-check'].outputs.failed_step }}"
 
           echo ${{ toJSON(needs) }}
 
