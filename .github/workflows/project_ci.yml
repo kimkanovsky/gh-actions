@@ -366,7 +366,7 @@ jobs:
         id: run-lint-and-generate-html-report
         run: |
           mkdir -p reports
-          flake8 . --format=html --htmldir=reports/lint_report || true
+          flake8 . --format=html --htmldir=reports/lint_report || exit 1
 
       - name: Run type check
         id: run-type-check
@@ -397,6 +397,7 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     needs: lint-and-type-check
+    if: success()
 
     steps:
       - name: Send Telegram notification
