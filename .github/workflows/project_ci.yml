@@ -299,7 +299,9 @@ jobs:
       - name: Capture Failed Step
         if: failure()
         id: capture-failure
-        run: echo "failed_step=${{ steps.*.name }}" >> $GITHUB_ENV
+        run: |
+          echo ${{ toJSON(steps) }}
+          echo "failed_step=${{ steps.*.name }}" >> $GITHUB_ENV
 
   notify:
     runs-on: ubuntu-latest
@@ -321,6 +323,6 @@ jobs:
 
           MESSAGE="${PROJECT_NAME}: Pipeline for commit ${COMMIT_HASH} finished ${STATUS}! ${FAILED_STEP}"
 
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-          -d chat_id="${TELEGRAM_CHAT_ID}" \
-          -d text="${MESSAGE}"
+        #   curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+        #   -d chat_id="${TELEGRAM_CHAT_ID}" \
+        #   -d text="${MESSAGE}"
