@@ -118,6 +118,78 @@
 
 name: CI Pipeline
 
+# on:
+#   pull_request:
+#     branches:
+#       - main
+#   push:
+#     branches:
+#       - main
+
+# jobs:
+#   lint-and-type-check:
+#     runs-on: ubuntu-latest
+
+#     strategy:
+#       matrix:
+#         python-version: ["3.11", "3.10"]
+
+#     outputs:
+#       output_1: ${{ steps.set_output.outputs.output_1 }}
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Set up Python ${{ matrix.python-version }}
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: ${{ matrix.python-version }}
+
+#       - name: Install dependencies
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install wemake-python-styleguide mypy
+#           pip install --upgrade flake8 flake8-quotes flake8-html
+
+#       - name: Run lint and generate HTML report
+#         run: |
+#           mkdir -p reports
+#           flake8 . --format=html --htmldir=reports/lint_report || true
+
+#       - name: Run type check
+#         run: python -m mypy .
+
+#       - name: Archive HTML report
+#         if: matrix.python-version == '3.10'
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: lint-report
+#           path: reports/lint_report
+
+#       - name: Set job output
+#         id: set_output
+#         run: |
+#           echo "output_1=Lint and type check completed for Python ${{ matrix.python-version }}" >> $GITHUB_OUTPUT
+
+#   notify:
+#     runs-on: ubuntu-latest
+#     needs: lint-and-type-check
+#     if: always()
+
+#     steps:
+#       - name: Determine status of all jobs
+#         run: |
+#           message="CI passed on all jobs!"
+#           failed_jobs=""
+
+#           # Print the outputs from lint-and-type-check job
+#           echo "Output 1: ${{ needs['lint-and-type-check'].outputs.output_1 }}"
+#           echo "Message: $message"
+
+
+#           name: CI Pipeline
+
 on:
   pull_request:
     branches:
@@ -135,7 +207,7 @@ jobs:
         python-version: ["3.11", "3.10"]
 
     outputs:
-      output_1: ${{ steps.set_output.outputs.output_1 }}
+      combined_output: ${{ steps.set_output.outputs.combined_output }}
 
     steps:
       - name: Checkout code
@@ -170,7 +242,16 @@ jobs:
       - name: Set job output
         id: set_output
         run: |
-          echo "output_1=Lint and type check completed for Python ${{ matrix.python-version }}" >> $GITHUB_OUTPUT
+          echo "output_part=Python ${{ matrix.python-version }}: completed" >> $GITHUB_ENV
+
+      - name: Combine outputs
+        id: combine_outputs
+        run: |
+          if [ -n "${{ steps.set_output.outputs.combined_output }}" ]; then
+            echo "combined_output=${{ steps.set_output.outputs.combined_output }}|${{ env.output_part }}" >> $GITHUB_OUTPUT
+          else
+            echo "combined_output=${{ env.output_part }}" >> $GITHUB_OUTPUT
+          fi
 
   notify:
     runs-on: ubuntu-latest
@@ -180,9 +261,12 @@ jobs:
     steps:
       - name: Determine status of all jobs
         run: |
-          message="CI passed on all jobs!"
-          failed_jobs=""
+          combined_output="${{ needs['lint-and-type-check'].outputs.combined_output }}"
+          echo "Combined output from all matrix jobs:"
+          echo "$combined_output"
 
-          # Print the outputs from lint-and-type-check job
-          echo "Output 1: ${{ needs['lint-and-type-check'].outputs.output_1 }}"
-          echo "Message: $message"
+          # Split the combined output by delimiter and print each part (optional)
+          IFS='|' read -ra parts <<< "$combined_output"
+          for part in "${parts[@]}"; do
+            echo "$part"
+          done
