@@ -116,7 +116,7 @@
 # #     message: ${{ env.message }}
 
 
-name: CI Pipeline
+# name: CI Pipeline
 
 # on:
 #   pull_request:
@@ -188,7 +188,60 @@ name: CI Pipeline
 #           echo "Message: $message"
 
 
-#           name: CI Pipeline
+# name: CI Pipeline
+
+# on:
+#   pull_request:
+#     branches:
+#       - main
+#   push:
+#     branches:
+#       - main
+
+# jobs:
+#   lint-and-type-check:
+#     runs-on: ubuntu-latest
+
+#     strategy:
+#       matrix:
+#         python-version: ["3.10", "3.11"]
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Set up Python ${{ matrix.python-version }}
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: ${{ matrix.python-version }}
+
+#       - name: Install dependencies
+#         run: |
+#           python -m pip install --upgrade pip
+#           pip install wemake-python-styleguide mypy
+#           pip install --upgrade flake8 flake8-quotes flake8-html
+
+#       - name: Run lint and generate HTML report
+#         run: |
+#           mkdir -p reports
+#           flake8 . --format=html --htmldir=reports/lint_report || true
+
+#       - name: Run type check
+#         run: python -m mypy .
+
+#       - name: Archive HTML report
+#         if: matrix.python-version == '3.10'
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: lint-report
+#           path: reports/lint_report
+
+#       - name: Print steps
+#         run: echo ${{ toJSON(steps) }}
+
+
+
+name: CI Pipeline
 
 on:
   pull_request:
@@ -198,16 +251,17 @@ on:
     branches:
       - main
 
+env:
+  TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}  # Добавьте ваш Telegram Bot API токен в секреты GitHub
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}  # Добавьте ваш Telegram chat ID в секреты GitHub
+
 jobs:
   lint-and-type-check:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        python-version: ["3.11", "3.10"]
-
-    outputs:
-      combined_output: ${{ steps.set_output.outputs.combined_output }}
+        python-version: ["3.10", "3.11"]
 
     steps:
       - name: Checkout code
@@ -239,22 +293,10 @@ jobs:
           name: lint-report
           path: reports/lint_report
 
-      - name: Set job output
-        id: set_output
-        run: |
-          echo "output_part=Python ${{ matrix.python-version }}: completed" >> $GITHUB_ENV
-
-      - name: Print steps
-        run: echo ${{ toJSON(steps) }}
-
-      - name: Combine outputs
-        id: combine_outputs
-        run: |
-          if [ -n "${{ steps.set_output.outputs.combined_output }}" ]; then
-            echo "combined_output=${{ steps.set_output.outputs.combined_output }}|${{ env.output_part }}" >> $GITHUB_OUTPUT
-          else
-            echo "combined_output=${{ env.output_part }}" >> $GITHUB_OUTPUT
-          fi
+      - name: Capture Failed Step
+        if: failure()
+        id: capture-failure
+        run: echo "failed_step=${{ steps.*.name }}" >> $GITHUB_ENV
 
   notify:
     runs-on: ubuntu-latest
@@ -262,14 +304,20 @@ jobs:
     if: always()
 
     steps:
-      - name: Determine status of all jobs
+      - name: Determine status and send Telegram notification
         run: |
-          combined_output="${{ needs.lint-and-type-check.outputs.combined_output }}"
-          echo "Combined output from all matrix jobs:"
-          echo "$combined_output"
+          PROJECT_NAME="${{ github.repository }}"
+          COMMIT_HASH="${{ github.sha }}"
+          STATUS="successfully"
+          FAILED_STEP=""
 
-          # Split the combined output by delimiter and print each part (optional)
-          IFS='|' read -ra parts <<< "$combined_output"
-          for part in "${parts[@]}"; do
-            echo "$part"
-          done
+          if [ "${{ needs.lint-and-type-check.result }}" != "success" ]; then
+            STATUS="with error"
+            FAILED_STEP=$(echo "Failed on step: ${{ env.failed_step }}")
+          fi
+
+          MESSAGE="${PROJECT_NAME}: Pipeline for commit ${COMMIT_HASH} finished ${STATUS}! ${FAILED_STEP}"
+
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+          -d chat_id="${TELEGRAM_CHAT_ID}" \
+          -d text="${MESSAGE}"
