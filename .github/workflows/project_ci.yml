@@ -387,11 +387,16 @@ jobs:
           COMMIT_HASH="${{ github.sha }}"
           STATUS="with error"
 
-          echo ${{ toJSON(steps) }}
+          # Convert the steps object to JSON and parse it to find the failed step
+          FAILED_STEP=$(echo '${{ toJSON(steps) }}' | jq -r 'to_entries[] | select(.value.outcome == "failure") | .key')
 
-          MESSAGE="${PROJECT_NAME}: Pipeline for commit ${COMMIT_HASH} finished ${STATUS}! ${{ toJSON(steps) }} failed."
+          if [ -z "$FAILED_STEP" ]; then
+            FAILED_STEP="Unknown step"
+          fi
 
-          echo ${MESSAGE}
+          MESSAGE="${PROJECT_NAME}: Pipeline for commit ${COMMIT_HASH} finished ${STATUS}! Step ${FAILED_STEP} failed."
+
+          echo "$MESSAGE"
 
 
   notify:
